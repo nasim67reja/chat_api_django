@@ -11,6 +11,10 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
+import os
+from dotenv import load_dotenv # type: ignore
+
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -22,10 +26,19 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-p%6&oc32y=%*^%!f)0biwdal1@fe2^oj$$43y6%%^0=%+3+jpc'
 
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
+
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# DEBUG = True
+
 
 ALLOWED_HOSTS = []
+
+
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 
 # Application definition
@@ -37,6 +50,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'corsheaders',
+    'rest_framework',
+    'users',
+    'chat_messages',
+
 ]
 
 MIDDLEWARE = [
@@ -47,7 +65,9 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
+CORS_ALLOW_ALL_ORIGINS = True
 
 ROOT_URLCONF = 'chat_app.urls'
 
@@ -69,14 +89,20 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'chat_app.wsgi.application'
 
+AUTH_USER_MODEL = 'users.User'
+
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST', default='localhost'),
+        'PORT': os.getenv('DB_PORT', default='3306'),
     }
 }
 
@@ -121,3 +147,61 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "{levelname} {asctime} {module} {process:d} {thread:d} {message}",
+            "style": "{",
+        },
+        "simple": {
+            "format": "{levelname} {message}",
+            "style": "{",
+        },
+    },
+    "filters": {
+        "require_debug_true": {
+            "()": "django.utils.log.RequireDebugTrue",
+        },
+    },
+    "handlers": {
+        "console": {
+            "level": "INFO",
+            "filters": ["require_debug_true"],
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
+        },
+        "mail_admins": {
+            "level": "ERROR",
+            "class": "django.utils.log.AdminEmailHandler",
+            "filters": ["require_debug_true"],
+        },
+        "file": {
+            "level": "DEBUG",
+            "class": "logging.FileHandler",
+            "filename": "app.log",
+            "formatter": "verbose",  # Use the verbose formatter for file logs
+        },
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console", "file"],  # Include file handler
+            "level": "DEBUG",  # Set the level to DEBUG to capture detailed logs
+            "propagate": True,
+        },
+        "django.request": {
+            "handlers": ["file"],  # Log errors to file
+            "level": "ERROR",
+            "propagate": False,
+        },
+        "your_app_name": {  # Replace 'your_app_name' with your app's name
+            "handlers": ["file"],  # Log all debug messages to file
+            "level": "DEBUG",
+            "propagate": False,
+        },
+    },
+}
