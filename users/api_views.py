@@ -7,6 +7,8 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model
 from users.serializers import SignupSerializer, SigninSerializer, UserSerializer
+from rest_framework_simplejwt.views import TokenRefreshView
+from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 import logging
 
 User = get_user_model()
@@ -83,6 +85,9 @@ class UserDetailView(APIView):
 
     def get(self, request, *args, **kwargs):
         try:
+            logger.debug(f"Authorization Header: {request.headers.get('Authorization')}")
+            logger.debug(f"User: {request.user}")
+            
             user = request.user
             user_data = UserSerializer(user).data
             return Response(user_data, status=status.HTTP_200_OK)
@@ -123,3 +128,15 @@ class UserDetailView(APIView):
                 {"error": "Failed to delete user account", "message": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+
+
+
+class CustomTokenRefreshView(TokenRefreshView):
+    """
+    This view allows the user to get a new access token by passing the refresh token.
+    """
+    logger.debug("CustomTokenRefreshView")
+    print("CustomTokenRefreshView")
+    serializer_class = TokenRefreshSerializer
